@@ -1,17 +1,33 @@
-FROM debian:wheezy
-MAINTAINER Paul-Willy Jean paul-willy.jean@geninov.com
+FROM tomcat:8.0
+MAINTAINER Paul-Willy Jean <paul-willy.jean@geninov.com>
 
 ENV TOMCAT_USER dspace
-ENV DEBIAN_FRONTEND noninteractive
+ENV DS_VERSION=5.1
 
 RUN useradd -m dspace
-RUN apt-get update && apt-get install -y curl
-RUN curl -L http://sourceforge.net/projects/dspace/files/DSpace%20Stable/5.1/dspace-5.1-release.tar.gz/download | tar -xzf -
-RUN apt-get install -y postgresql
-RUN apt-get install -y openjdk-7-jdk
-RUN apt-get install -y tomcat7
-RUN apt-get install -y maven
-RUN apt-get install -y vim && cp /usr/share/vim/vim73/vimrc_example.vim /etc/vim/vimrc
-RUN service postgresql start && su postgres -c 'createuser --echo --username=postgres --no-password --no-superuser --no-createdb --no-createrole dspace && createdb --username=postgres --owner=dspace --encoding=UNICODE --template=template0 dspace'
+RUN gpg --keyserver pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4
+RUN curl -o /usr/local/bin/gosu -SL "https://github.com/tianon/gosu/releases/download/1.2/gosu-$(dpkg --print-architecture)" \
+    && curl -o /usr/local/bin/gosu.asc -SL "https://github.com/tianon/gosu/releases/download/1.2/gosu-$(dpkg --print-architecture).asc" \
+    && gpg --verify /usr/local/bin/gosu.asc \
+    && rm /usr/local/bin/gosu.asc \
+    && chmod +x /usr/local/bin/gosu
+RUN curl -SsL https://github.com/DSpace/DSpace/archive/dspace-$DS_VERSION.tar.gz | tar -C /usr/src/ -xzf -
+RUN mkdir /dspace && chown -R dspace /dspace /usr/src/DSpace-dspace-$DS_VERSION
+RUN buildDep=" \
+        git \
+        maven \
+        openjdk-7-jdk \
+    "; apt-get update && apt-get install -y $buildDep \
+    && cd /usr/src/DSpace-dspace-$DS_VERSION \
+    && sed -i "s/path=\"Mirage\/\"/path=\"Mirage2\/\"/" /usr/src/DSpace-dspace-$DS_VERSION/dspace/config/xmlui.xconf \
+    && su dspace -c 'mvn package -Dmirage2.on=true' \
+    && sed -i "s/<java classname=\"org.dspace.storage.rdbms.DatabaseUtils\" classpathref=\"class.path\" fork=\"yes\" failonerror=\"yes\">/<java classname=\"org.dspace.storage.rdbms.DatabaseUtils\" classpathref=\"class.path\" fork=\"yes\" failonerror=\"no\">/" /usr/src/DSpace-dspace-$DS_VERSION/dspace/target/dspace-installer/build.xml \
+    && cd dspace/target/dspace-installer \
+    && gosu dspace ant fresh_install \
+    && cd /dspace \
+    && rm -r /usr/src/* \
+    && apt-get purge -y --auto-remove $buildDep && rm -rf /var/lib/apt/lists/* /tmp/*
 
-CMD /bin/bash
+COPY entrypoint.sh /usr/bin/entrypoint.sh
+ENTRYPOINT ["entrypoint.sh"]
+CMD ["run"]
