@@ -24,5 +24,7 @@ RUN echo "host\t all\t\t postgres\t 0.0.0.0/0\t\t md5" >> /etc/postgresql/${PG_V
 
 EXPOSE 5432
 
+VOLUME ["/etc/postgresql", "/var/log/postgresql", "/var/lib/postgresql"]
+
 CMD /usr/lib/postgresql/${PG_VERSION}/bin/postgres -D /var/lib/postgresql/${PG_VERSION}/main -c config_file=/etc/postgresql/${PG_VERSION}/main/postgresql.conf
 # CMD ["/usr/lib/postgresql/${PG_VERSION}/bin/postgres", "-D", "/var/lib/postgresql/${PG_VERSION}/main", "-c", "config_file=/etc/postgresql/${PG_VERSION}/main/postgresql.conf"]
