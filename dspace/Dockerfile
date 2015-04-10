@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y \
 RUN cp /usr/share/vim/vim73/vimrc_example.vim /etc/vim/vimrc
 RUN curl -L http://sourceforge.net/projects/dspace/files/DSpace%20Stable/5.1/dspace-5.1-release.tar.gz/download | tar -xzf -
 COPY build.properties dspace-5.1-release/
+COPY web.xml /etc/tomcat7/
 
 RUN mkdir /dspace \
     && chown dspace /dspace \
