@@ -24,6 +24,7 @@ USER dspace
 WORKDIR dspace-5.1-release
 RUN mvn -X -e package
 WORKDIR dspace/target/dspace-installer
+COPY build.xml ./
 RUN ant fresh_install
 
 CMD /bin/bash
