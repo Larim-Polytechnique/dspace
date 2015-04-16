@@ -1,0 +1,7 @@
+dspace:
+    build: ./dspace
+    links:
+        - postgres:db
+
+postgres:
+    build: ./postgres
