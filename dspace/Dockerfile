@@ -2,23 +2,23 @@ FROM tomcat:8.0
 MAINTAINER Paul-Willy Jean <paul-willy.jean@geninov.com>
 
 ENV TOMCAT_USER dspace
-ENV DS_MAJOR=5.1
+ENV DS_VERSION=5.1
 
 RUN useradd -m dspace
-RUN buildDep=" \
+RUN apt-get update && apt-get install -y \
         git \
         maven \
         openjdk-7-jdk \
-    "; apt-get update && apt-get install -y $buildDep  vim
+        vim
 RUN cp /usr/share/vim/vim74/vimrc_example.vim /etc/vim/vimrc
-RUN curl -SsL http://sourceforge.net/projects/dspace/files/DSpace%20Stable/$DS_MAJOR/dspace-$DS_MAJOR-release.tar.gz/download | tar -C /usr/src/ -xzf -
+RUN curl -SsL https://github.com/DSpace/DSpace/archive/dspace-$DS_VERSION.tar.gz | tar -C /usr/src/ -xzf -
 
 RUN mkdir /dspace \
     && chown dspace /dspace \
-    && chown -R dspace /usr/src/dspace-$DS_MAJOR-release
+    && chown -R dspace /usr/src/DSpace-dspace-$DS_VERSION
 
 USER dspace
-WORKDIR /usr/src/dspace-$DS_MAJOR-release
+WORKDIR /usr/src/DSpace-dspace-$DS_VERSION
 RUN sed -i "s/path=\"Mirage\/\"/path=\"Mirage2\/\"/" dspace/config/xmlui.xconf
 RUN mvn package -Dmirage2.on=true
 WORKDIR dspace/target/dspace-installer
@@ -27,6 +27,13 @@ RUN sed -i "s/<java classname=\"org.dspace.storage.rdbms.DatabaseUtils\" classpa
 RUN ant fresh_install
 
 USER root
+WORKDIR /dspace
+RUN rm -r /usr/src/*
+RUN apt-get purge -y --auto-remove \
+        git \
+        maven \
+        openjdk-7-jdk \
+    && rm -rf /var/lib/apt/lists/*
 COPY entrypoint.sh /usr/bin/entrypoint.sh
 ENTRYPOINT ["entrypoint.sh"]
 CMD ["run"]
