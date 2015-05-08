@@ -10,3 +10,4 @@ postgres:
     environment:
         - POSTGRES_USER=dspace
         - POSTGRES_PASSWORD=dspace
+        - POSTGRES_DB=dspace
